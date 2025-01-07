@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artwork Recognition</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">Artwork Recognition using ML</h2>
+        <form id="uploadForm" class="p-4 border rounded shadow-sm">
+            <div class="mb-3">
+                <label for="imageInput" class="form-label">Choose an image</label>
+                <input class="form-control" type="file" id="imageInput" accept="image/*" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Upload Image</button>
+        </form>
+        <!-- Uploaded Image Preview -->
+        <div class="text-center mb-4">
+            <div class="d-flex justify-content-center">
+                <img id="uploaded-image" src="" class="img-fluid rounded shadow" style="max-width: 300px; display: none;" alt="Uploaded Image Preview">
+            </div>
+        </div>
+        <div id="status" class="mt-3 text-center"></div>
+        <!-- Table to display API response -->
+        <table class="table table-bordered mt-4">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody id="response-body">
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bootstrap JS (Optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // JavaScript to handle the form submission
+        document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent the default form submission
+
+            const imageInput = document.getElementById('imageInput');
+            const statusDiv = document.getElementById('status');
+            const uploadedImage = document.getElementById('uploaded-image');
+
+            if (imageInput.files.length === 0) {
+                statusDiv.textContent = "Please select an image to upload.";
+                statusDiv.className = "text-danger";
+                return;
+            }
+
+            // Show uploaded image preview
+            const file = imageInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedImage.src = event.target.result;
+                uploadedImage.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            const imageFile = imageInput.files[0];
+            const formData = new FormData();
+            formData.append('file', imageFile);
+
+            try {
+                statusDiv.textContent = "Uploading...";
+                statusDiv.className = "text-info";
+
+                // Replace with your API endpoint
+                const apiUrl = 'http://127.0.0.1:5000/upload';
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData,
+                });
+                const tableBody = document.getElementById('response-body');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                statusDiv.textContent = "Here are the results:";
+                statusDiv.className = "text-success";
+                const prediction = result.body.prediction;
+                const rows = Object.entries(prediction).map(([key, value]) => {
+                    // Create table rows dynamically
+                    return `<tr><td>${key}</td><td>${value}</td></tr>`;
+                }).join('');
+                tableBody.innerHTML = rows;
+
+                console.log(result);
+            } catch (error) {
+                statusDiv.textContent = error;
+                statusDiv.className = "text-danger";
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
